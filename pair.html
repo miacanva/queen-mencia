@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>QUEEN-MENCIA Pair</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* ============================================
+   MODERN CSS FOR WHATSAPP BOT PAIR SITE
+   Theme: Blue & Yellow with 9-Color Cycle Gradient
+   Includes: Glassmorphism, Smooth Transitions, Looping Animations
+   ============================================ */
+
+:root {
+  --primary-blue: #0f52ba;
+  --primary-yellow: #ffd700;
+  --dark-glass: rgba(0, 0, 0, 0.6);
+  --light-glass: rgba(255, 255, 255, 0.1);
+  --border-glow: rgba(0, 255, 136, 0.3);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a2b3d 0%, #1a4a6f 50%, #f4c542 100%);
+  background-attachment: fixed;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Animated gradient overlay that shifts continuously */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    125deg,
+    #0a2b3d,
+    #1e6b9e,
+    #f5b81b,
+    #0f52ba,
+    #ffaa00,
+    #1e3a5f,
+    #ffdd55,
+    #0a2b3d
+  );
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+  z-index: -2;
+  opacity: 0.7;
+}
+
+/* Dark vignette overlay for readability */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.4) 100%);
+  z-index: -1;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Main container with glassmorphism */
+.container {
+  max-width: 600px;
+  width: 100%;
+  background: rgba(10, 25, 35, 0.65);
+  backdrop-filter: blur(12px);
+  border-radius: 2rem;
+  padding: 2rem 1.8rem;
+  box-shadow: 0 25px 45px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 215, 0, 0.2);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+}
+
+.container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 30px 55px rgba(0, 0, 0, 0.4), 0 0 0 2px rgba(255, 215, 0, 0.4);
+}
+
+/* Headline styles */
+h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #fff, #ffd700, #4db8ff);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 3s linear infinite;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.5px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+.subtitle {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 2rem;
+  font-weight: 400;
+  font-size: 0.95rem;
+  border-bottom: 1px dashed rgba(255, 215, 0, 0.5);
+  display: inline-block;
+  width: auto;
+  padding-bottom: 0.5rem;
+}
+
+/* Label styling */
+label {
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+  display: block;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+  color: #ffd966;
+}
+
+/* ============================================
+   9-COLOR CYCLING GRADIENT FOR INPUT BOX
+   The number input field will cycle through 9 vibrant colors!
+   ============================================ */
+input {
+  width: 100%;
+  padding: 14px 18px;
+  font-size: 1rem;
+  font-family: monospace;
+  font-weight: 500;
+  border: none;
+  border-radius: 60px;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  color: #fff;
+  outline: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  margin-bottom: 1.2rem;
+  
+  /* The 9-color gradient cycling animation */
+  background: linear-gradient(
+    90deg,
+    #FF3366, #FF9933, #FFD700, #33CC66, #3399FF,
+    #9933FF, #FF33CC, #66FFCC, #FF6600, #FF3366
+  );
+  background-size: 400% 100%;
+  background-clip: padding-box;
+  border: 2px solid transparent;
+  animation: cycle9Colors 8s linear infinite;
+}
+
+/* Inner glow effect on focus */
+input:focus {
+  animation-play-state: paused;
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), inset 0 0 8px rgba(255, 215, 0, 0.2);
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffd966;
+}
+
+/* The magical 9-color transition loop */
+@keyframes cycle9Colors {
+  0% { background-position: 0% 50%; }
+  11% { background-position: 25% 50%; }
+  22% { background-position: 50% 50%; }
+  33% { background-position: 75% 50%; }
+  44% { background-position: 100% 50%; }
+  55% { background-position: 75% 50%; }
+  66% { background-position: 50% 50%; }
+  77% { background-position: 25% 50%; }
+  88% { background-position: 0% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Button styling - Modern with yellow/blue blend */
+button {
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 60px;
+  background: linear-gradient(95deg, #ffcd38, #f5a623, #0f52ba);
+  background-size: 200% auto;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 0.5rem;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+}
+
+button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+button:hover::before {
+  left: 100%;
+}
+
+button:hover {
+  background-position: right center;
+  transform: scale(1.02);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.4), 0 0 12px rgba(255, 215, 0, 0.6);
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+/* Output card - premium glass style */
+.output {
+  margin-top: 2rem;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(16px);
+  padding: 1.5rem;
+  border-radius: 1.5rem;
+  word-break: break-all;
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  transition: all 0.3s ease;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #e0e0e0;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.output:hover {
+  border-color: rgba(255, 215, 0, 0.7);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3), 0 0 8px rgba(255, 215, 0, 0.3);
+}
+
+.output strong {
+  color: #ffd966;
+  font-weight: 600;
+}
+
+/* QR code styling (if needed) */
+.qr-container {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.qr-container img {
+  border-radius: 20px;
+  background: white;
+  padding: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.qr-container img:hover {
+  transform: scale(1.02);
+}
+
+/* Responsive adjustments */
+@media (max-width: 550px) {
+  .container {
+    padding: 1.5rem 1.2rem;
+  }
+  
+  h1 {
+    font-size: 1.8rem;
+  }
+  
+  input, button {
+    padding: 12px 16px;
+  }
+  
+  .output {
+    padding: 1rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Loading spinner or state (optional) */
+.loader {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  border-top-color: #ffd700;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-left: 10px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a1a2a;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #ffd700, #0f52ba);
+  border-radius: 10px;
+}
+
+/* Additional modern elements */
+.glass-badge {
+  display: inline-block;
+  background: rgba(255, 215, 0, 0.2);
+  backdrop-filter: blur(4px);
+  border-radius: 30px;
+  padding: 4px 12px;
+  font-size: 0.7rem;
+  margin-bottom: 1rem;
+  border: 0.5px solid rgba(255, 215, 0, 0.5);
+}
+
+/* For GitHub file preview compatibility */
+.github-markdown-body pre {
+  background: transparent !important;
+}
+  </style>
+</head>
+<body>
+
+  <h1>QUEEN-MENCIA Pairing</h1>
+
+  <input type="text" id="number" placeholder="Enter WhatsApp Number (e.g., 255623553450)" />
+  <button onclick="getCode()">Generate Pair Code</button>
+
+  <div id="result" class="output" style="display:none;"></div>
+
+  <script>
+    async function getCode() {
+      const number = document.getElementById("number").value.trim();
+      const resultBox = document.getElementById("result");
+
+      if (!number) {
+        alert("Please enter a valid number.");
+        return;
+      }
+
+      resultBox.style.display = 'block';
+      resultBox.textContent = "⏳ Generating code, please wait...";
+
+      try {
+        const res = await fetch(`/code?number=${encodeURIComponent(number)}`);
+        const data = await res.json();
+
+        if (data.code) {
+          resultBox.textContent = `✅ Pairing Code: ${data.code}`;
+        } else if (data.error) {
+          resultBox.textContent = `❌ Error: ${data.error}`;
+        } else {
+          resultBox.textContent = "⚠️ Unknown response received.";
+        }
+      } catch (err) {
+        resultBox.textContent = `❌ Failed to get code: ${err.message}`;
+      }
+    }
+  </script>
+
+</body>
+</html>
