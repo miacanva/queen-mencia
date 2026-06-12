@@ -8,7 +8,8 @@ const {
     useMultiFileAuthState,
     delay,
     Browsers,
-    makeCacheableSignalKeyStore
+    makeCacheableSignalKeyStore,
+    DisconnectReason
 } = require('@whiskeysockets/baileys');
 
 const router = express.Router();
@@ -23,96 +24,85 @@ router.get('/', async (req, res) => {
     const id = makeid();
     const tempDir = path.join(__dirname, 'temp', id);
     const phoneNumber = (req.query.number || '').replace(/\D/g, '');
+    
+    // Ensure phone number has country code
+    const formattedNumber = phoneNumber.startsWith('255') ? phoneNumber : `255${phoneNumber}`;
 
-    if (!phoneNumber) {
-        return res.status(400).send({ error: "Please provide a valid phone number" });
+    if (!phoneNumber || phoneNumber.length < 10) {
+        return res.status(400).send({ error: "Please provide a valid phone number with country code" });
     }
 
-    // Add timeout to prevent hanging
+    console.log(`📱 Starting pairing for: ${formattedNumber}`);
+
+    // Set timeout for the entire operation (60 seconds)
     const timeout = setTimeout(() => {
         if (!res.headersSent) {
             removeFolder(tempDir);
             res.status(504).send({ error: "Request timeout. Please try again." });
         }
-    }, 60000);
+    }, 90000);
 
-    async function createSocketSession() {
+    let pairingCodeSent = false;
+    let sock = null;
+
+    try {
         const { state, saveCreds } = await useMultiFileAuthState(tempDir);
-        const logger = pino({ level: "fatal" }).child({ level: "fatal" });
+        const logger = pino({ level: "silent" });
 
-        const sock = makeWASocket({
+        sock = makeWASocket({
             auth: {
                 creds: state.creds,
                 keys: makeCacheableSignalKeyStore(state.keys, logger)
             },
             printQRInTerminal: false,
-            generateHighQualityLinkPreview: true,
             logger,
+            browser: Browsers.ubuntu("Chrome"),
             syncFullHistory: false,
-            browser: Browsers.macOS("Safari"),
-            // FIX: Add these options to handle preconditions
-            version: [2, 3000, 1015901307], // Force specific WhatsApp version
-            connectTimeoutMs: 60000,
-            defaultQueryTimeoutMs: 60000,
-            keepAliveIntervalMs: 10000,
-            emitOwnEvents: true,
-            fireInitQueries: true
+            markOnlineOnConnect: false,
+            connectTimeoutMs: 30000,
+            defaultQueryTimeoutMs: 30000,
+            keepAliveIntervalMs: 15000,
+            emitOwnEvents: false,
+            fireInitQueries: true,
+            generateHighQualityLinkPreview: false,
+            patchMessageBeforeSending: false
         });
 
         sock.ev.on('creds.update', saveCreds);
 
-        // FIX: Handle pairing code response properly
-        let pairingCodeSent = false;
-
+        // Handle connection updates
         sock.ev.on("connection.update", async (update) => {
             const { connection, lastDisconnect } = update;
+            console.log(`📡 Connection state: ${connection}`);
 
             if (connection === "open") {
-                await delay(5000);
-
-                try {
-                    const credsPath = path.join(tempDir, 'creds.json');
-                    if (fs.existsSync(credsPath)) {
-                        const sessionData = fs.readFileSync(credsPath, 'utf8');
-                        const base64 = Buffer.from(sessionData).toString('base64');
-                        const sessionId = "QUEEN-MENCIA~" + base64;
-
-                        await sock.sendMessage(sock.user.id, { text: sessionId });
-
-                        const successMsg = {
-                            text: `👸*QUEEN-MENCIA Session Created!*\n\n` +
-                                `▸ *Never share* your session ID\n` +
-                                `▸ Join our WhatsApp Channel\n` +
-                                `▸ Report bugs on GitHub\n\n` +
-                                `_Powered by QUEEN-MENCIA_\n\n` +
-                                `🔗 *Useful Links:*\n` +
-                                `▸ GitHub: https://github.com/miacanva/Queen-mencia\n` +
-                                `▸ WhatsApp Channel: https://whatsapp.com/channel/0029VbCSzViAjPXF9tcEJg37`,
-                            contextInfo: {
-                                mentionedJid: [sock.user.id],
-                                forwardingScore: 1000,
-                                isForwarded: true
-                            }
-                        };
-
-                        await sock.sendMessage(sock.user.id, successMsg);
+                console.log(`✅ Connection opened for ${sock.user?.id || 'unknown'}`);
+                
+                // Don't send session message here - just cleanup after pairing
+                setTimeout(async () => {
+                    try {
+                        await sock.ws?.close();
+                        removeFolder(tempDir);
+                        clearTimeout(timeout);
+                        console.log(`🧹 Cleaned up temp folder`);
+                    } catch (err) {
+                        console.log(`Cleanup error: ${err.message}`);
                     }
-                } catch (err) {
-                    console.error("❌ Session Error:", err.message);
-                } finally {
-                    await delay(1000);
-                    await sock.ws?.close();
-                    removeFolder(tempDir);
-                    clearTimeout(timeout);
-                    console.log(`✅ Session completed`);
-                }
+                }, 10000);
 
             } else if (connection === "close") {
                 const statusCode = lastDisconnect?.error?.output?.statusCode;
-                if (statusCode !== 401) {
-                    console.log("🔁 Reconnecting...");
-                    await delay(10);
-                    createSocketSession();
+                const shouldReconnect = statusCode !== DisconnectReason.loggedOut && !pairingCodeSent;
+                
+                console.log(`🔌 Connection closed. Status: ${statusCode}, Should reconnect: ${shouldReconnect}`);
+                
+                if (shouldReconnect) {
+                    console.log(`🔄 Reconnecting in 2 seconds...`);
+                    await delay(2000);
+                    if (!pairingCodeSent && !res.headersSent) {
+                        // Don't recreate the whole session, just let it close
+                        removeFolder(tempDir);
+                    }
                 } else {
                     clearTimeout(timeout);
                     removeFolder(tempDir);
@@ -120,65 +110,79 @@ router.get('/', async (req, res) => {
             }
         });
 
-        // FIX: Handle pairing code request with retry logic
-        if (!sock.authState.creds.registered) {
+        // Request pairing code BEFORE waiting for connection
+        if (!state.creds.registered) {
+            console.log(`🔐 Requesting pairing code for ${formattedNumber}...`);
+            
+            // Small delay to let socket initialize
             await delay(2000);
             
-            let retries = 0;
-            const maxRetries = 3;
-            
-            while (retries < maxRetries && !pairingCodeSent) {
-                try {
-                    console.log(`📱 Requesting pairing code for ${phoneNumber} (attempt ${retries + 1})`);
-                    const pairingCode = await sock.requestPairingCode(phoneNumber);
+            try {
+                // Try multiple times with different approaches
+                let pairingCode = null;
+                let attempts = 0;
+                const maxAttempts = 2;
+                
+                while (attempts < maxAttempts && !pairingCode) {
+                    attempts++;
+                    console.log(`📱 Attempt ${attempts} to get pairing code...`);
                     
-                    if (pairingCode && !res.headersSent) {
-                        pairingCodeSent = true;
-                        clearTimeout(timeout);
-                        return res.send({ code: pairingCode });
-                    }
-                    break;
-                } catch (err) {
-                    console.error(`❌ Pairing attempt ${retries + 1} failed:`, err.message);
-                    
-                    // Check for precondition error
-                    if (err.message.includes('Precondition') || err.message.includes('428')) {
-                        console.log("⚠️ Precondition Required - Retrying with delay...");
-                        await delay(3000);
-                        retries++;
-                        
-                        if (retries === maxRetries) {
-                            clearTimeout(timeout);
-                            if (!res.headersSent) {
-                                return res.status(428).send({ 
-                                    error: "Precondition Required. Please try again in a few moments.",
-                                    code: "PRECONDITION_REQUIRED"
-                                });
-                            }
-                        }
-                    } else if (err.message.includes('timeout') || err.message.includes('rate')) {
-                        await delay(5000);
-                        retries++;
-                    } else {
-                        clearTimeout(timeout);
-                        if (!res.headersSent) {
-                            return res.status(500).send({ error: err.message });
-                        }
+                    try {
+                        // The correct method - just the phone number
+                        pairingCode = await sock.requestPairingCode(formattedNumber);
+                        console.log(`✅ Got pairing code: ${pairingCode}`);
                         break;
+                    } catch (err) {
+                        console.log(`⚠️ Attempt ${attempts} failed: ${err.message}`);
+                        if (err.message.includes("timeout") || err.message.includes("Closed")) {
+                            await delay(3000);
+                        } else {
+                            break;
+                        }
                     }
                 }
+                
+                if (pairingCode && !pairingCodeSent && !res.headersSent) {
+                    pairingCodeSent = true;
+                    clearTimeout(timeout);
+                    return res.send({ 
+                        code: pairingCode,
+                        message: "Use this code to pair your WhatsApp"
+                    });
+                } else {
+                    throw new Error("Failed to get pairing code after attempts");
+                }
+                
+            } catch (err) {
+                console.error(`❌ Pairing error: ${err.message}`);
+                clearTimeout(timeout);
+                removeFolder(tempDir);
+                
+                if (!res.headersSent) {
+                    return res.status(500).send({ 
+                        error: err.message.includes("timeout") 
+                            ? "Request timeout. Try again on a stable network."
+                            : err.message.includes("Precondition")
+                            ? "Server busy. Please wait 30 seconds and try again."
+                            : `Error: ${err.message}`
+                    });
+                }
+            }
+        } else {
+            console.log(`Already registered, skipping pairing`);
+            clearTimeout(timeout);
+            removeFolder(tempDir);
+            if (!res.headersSent) {
+                res.status(400).send({ error: "Already registered. Use different number." });
             }
         }
-    }
-
-    try {
-        await createSocketSession();
+        
     } catch (err) {
-        console.error("🚨 Fatal Error:", err.message);
-        removeFolder(tempDir);
+        console.error(`🚨 Fatal: ${err.message}`);
         clearTimeout(timeout);
+        removeFolder(tempDir);
         if (!res.headersSent) {
-            res.status(500).send({ error: "Service Unavailable. Try again later." });
+            res.status(500).send({ error: `Server error: ${err.message}` });
         }
     }
 });
